@@ -1,0 +1,60 @@
+{
+  "name": "adonx.one",
+  "version": "1.0.0",
+  "description": "Adonx Token",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "truffle compile && npm run flat && npm run abi",
+    "test": "truffle test",
+    "flat": "truffle-flattener ./contracts/AdonxToken.sol > build/contracts-flat/AdonxToken.flat.sol && truffle-flattener ./contracts/AdonxTokenSale.sol > build/contracts-flat/AdonxTokenSale.flat.sol",
+    "abi": "docker run  --rm -v $(pwd):/root ethereum/solc:0.5.5 --overwrite --abi --bin  /root/build/contracts-flat/AdonxToken.flat.sol -o /root/build/bin && docker run  --rm -v $(pwd):/root ethereum/solc:0.5.5 --overwrite --abi --bin  /root/build/contracts-flat/AdonxTokenSale.flat.sol -o /root/build/bin",
+    "clean": "rm -rf ./build/contracts/* && rm -rf ./build/bin/* && rm -rf ./build/contracts-flat/*"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@truffle/hdwallet-provider": "^1.2.1",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-stage-2": "^6.18.0",
+    "babel-preset-stage-3": "^6.17.0",
+    "babel-register": "^6.26.0",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.0.0",
+    "chai-bignumber": "^2.0.2",
+    "chai-datetime": "1.7.0",
+    "coveralls": "^3.0.1",
+    "dotenv": "^4.0.0",
+    "eslint": "^4.19.1",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-align-assignments": "^1.1.2",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "ethereumjs-util": "^5.2.0",
+    "ethjs-abi": "^0.2.1",
+    "ganache-cli": "6.1.0",
+    "solidity-coverage": "^0.5.4",
+    "solium": "^1.1.7",
+    "truffle": "^4.1.17",
+    "truffle-flattener": "^1.4.0",
+    "truffle-hdwallet-provider": "0.0.5",
+    "truffle-plugin-verify": "^0.5.4",
+    "web3-utils": "^1.0.0-beta.34"
+  },
+  "dependencies": {
+    "@babel/core": "^7.0.0",
+    "@openzeppelin/cli": "^2.8.2",
+    "@openzeppelin/contracts": "^2.5.0",
+    "ajv": "^5.0.0",
+    "fs-extra": "^9.0.1",
+    "ganache-time-traveler": "^1.0.15",
+    "path": "^0.12.7",
+    "solc": "^0.8.0",
+    "webpack": "^4.0.0"
+  }
+}
