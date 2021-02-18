@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/crowdsale/Crowdsale.sol";
 import "@openzeppelin/contracts/crowdsale/validation/PausableCrowdsale.sol";
 import "@openzeppelin/contracts/crowdsale/validation/TimedCrowdsale.sol";
 import "@openzeppelin/contracts/crowdsale/distribution/FinalizableCrowdsale.sol";
-import "@openzeppelin/contracts/token/ERC20/TokenTimelock.sol";
 
 contract AdonxTokenSale is
     Ownable,
@@ -40,7 +39,7 @@ contract AdonxTokenSale is
     {
         require(_rate > 0);
         require(_wallet != address(0));
- 
+
         changeableRate = _rate;
         startTime = _openingTime;
         endTime = _closingTime;
@@ -78,19 +77,31 @@ contract AdonxTokenSale is
         return super.token().balanceOf(address(this));
     }
 
-    /**
-     * @return the crowdsale opening time.
-     */
-    function openingTime() public view returns (uint256) {
-        return startTime;
-    }
-
     function updateOpeningTime(uint256 _newOpeningTime) public onlyOwner {
         require(
             startTime != _newOpeningTime,
             "New unlock time should be differnt"
         );
         startTime = _newOpeningTime;
+    }
+
+    function updateClosingTime(uint256 _newClosingTime) public onlyOwner {
+        require(
+            endTime != _newClosingTime,
+            "New unlock time should be differnt"
+        );
+        endTime = _newClosingTime;
+    }
+
+    function extendClosingTime(uint256 _newClosingTime) public onlyOwner {
+        _extendTime(_newClosingTime);
+    }
+
+    /**
+     * @return the crowdsale opening time.
+     */
+    function openingTime() public view returns (uint256) {
+        return startTime;
     }
 
     /**
@@ -100,12 +111,37 @@ contract AdonxTokenSale is
         return endTime;
     }
 
-    function updateClosingTime(uint256 _newClosingTime) public onlyOwner {
+    /**
+     * @return true if the crowdsale is open, false otherwise.
+     */
+    function isOpen() public view returns (bool) {
+        // solhint-disable-next-line not-rely-on-time
+        return block.timestamp >= startTime && block.timestamp <= endTime;
+    }
+
+    /**
+     * @dev Checks whether the period in which the crowdsale is open has already elapsed.
+     * @return Whether crowdsale period has elapsed
+     */
+    function hasClosed() public view returns (bool) {
+        // solhint-disable-next-line not-rely-on-time
+        return block.timestamp > endTime;
+    }
+
+    /**
+     * @dev Extend crowdsale.
+     * @param newClosingTime Crowdsale closing time
+     */
+    function _extendTime(uint256 newClosingTime) internal {
+        require(!hasClosed(), "TimedCrowdsale: already closed");
+        // solhint-disable-next-line max-line-length
         require(
-            endTime != _newClosingTime,
-            "New unlock time should be differnt"
+            newClosingTime > endTime,
+            "TimedCrowdsale: new closing time is before current closing time"
         );
-        endTime = _newClosingTime;
+
+        emit TimedCrowdsaleExtended(endTime, newClosingTime);
+        endTime = newClosingTime;
     }
 
     /**
@@ -132,7 +168,6 @@ contract AdonxTokenSale is
         );
     }
 
-
     function _updatePurchasingState(address _beneficiary, uint256 _weiAmount)
         internal
     {
@@ -141,15 +176,16 @@ contract AdonxTokenSale is
         contributions[_beneficiary] = _contribution.add(_weiAmount);
     }
 
+    /// @dev This will be invoked by the owner, when owner wants to rescue tokens
+    function recoverTokens() public onlyOwner {
+        super.token().safeTransfer(owner(), tokenBalance());
+    }
+
     /**
      * @dev enables token transfers, called when owner calls finalize()
      */
     function finalization() public onlyOwner {
-        uint256 remainingTokens = tokenBalance();
-        if (remainingTokens > 0) {
-            super.token().safeTransfer(super.wallet(), remainingTokens);
-        }
+        recoverTokens();
         super._finalization();
     }
-
 }

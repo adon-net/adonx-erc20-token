@@ -76,8 +76,8 @@ contract('AdonxTokenSale', function ([_, wallet, investor1, investor2, investor3
       this.closingTime
     );
 
-    await this.token.setTransferAgent(_, true);
     await this.token.setReleaseAgent(_);
+    await this.token.setTransferAgent(_, true);
     await this.token.setTransferAgent(this.tokenSale.address, true);
 
     let snapshot = await timeMachine.takeSnapshot();
@@ -471,11 +471,16 @@ contract('AdonxTokenSale', function ([_, wallet, investor1, investor2, investor3
       saleBalance = ether.fromWei(saleBalance.toString());
       saleBalance.should.be.bignumber.eql(web3.utils.toBN(afterSaleBalance.toString()));
 
+      await this.token.setReleaseAgent(_);
+      await this.token.releaseTokenTransfer();
       this.tokenSale.finalization();
 
-      let walletTokenBalance = await this.token.balanceOf(this.wallet);
+      var released = await this.token.released();
+      released.should.be.true;
+
+      let walletTokenBalance = await this.token.balanceOf(_);
       walletTokenBalance = ether.fromWei(walletTokenBalance.toString());
-      walletTokenBalance.should.be.bignumber.eql(web3.utils.toBN(afterSaleBalance.toString()));
+      walletTokenBalance.should.be.bignumber.eql(web3.utils.toBN('20996500'));      // one purchase of 3500; 21000000-3500 = 20996500
 
       let walletEthBalance = await web3.eth.getBalance(this.wallet);
       walletEthBalance = ether.fromWei(walletEthBalance.toString());
