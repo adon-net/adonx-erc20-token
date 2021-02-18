@@ -326,6 +326,15 @@ contract('AdonxTokenSale', function ([_, wallet, investor1, investor2, investor3
       });
 
       it('only admin can revoke transfer agent', async function () {
+        await this.tokenSale.buyTokens(investor3, { value: ether.toWei('.5'), from: investor3 }).should.be.fulfilled;
+        await this.token.setTransferAgent(investor3, true, { from: _ }).should.be.fulfilled;
+
+        await this.token.transfer(investor4, ether.toWei('500'), { from: investor3 }).should.be.fulfilled;
+
+        var token_bal_investor4 = await this.token.balanceOf(investor4);
+        token_bal_investor4 = ether.fromWei(token_bal_investor4.toString());
+        token_bal_investor4.should.be.bignumber.eql(web3.utils.toBN('500'));
+
         await this.token.setTransferAgent(investor3, false, { from: _ }).should.be.fulfilled;
         await this.token.transfer(investor4, ether.toWei('500'), { from: investor3 }).should.not.be.fulfilled;
       });
