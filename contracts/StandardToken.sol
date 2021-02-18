@@ -1,28 +1,22 @@
 pragma solidity ^0.5.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
-import "@openzeppelin/contracts/ownership/Ownable.sol";
 
-contract AdonxToken is ERC20, ERC20Detailed, Ownable {
+import "@openzeppelin/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract StandardToken is ERC20, Ownable {
+    /* The finalizer contract that allows unlift the transfer limits on this token */
     address public releaseAgent;
 
     /** A crowdsale contract can release us to the wild if ICO success. If false we are are in transfer lock up period.*/
-    bool private released = false;
+    bool public released = true;
 
     /** Map of agents that are allowed to transfer tokens regardless of the lock down period. These are crowdsale contracts and possible the team multisig itself. */
     mapping(address => bool) public transferAgents;
 
-    /**
-     * @dev Constructor that gives msg.sender all of existing tokens.
-     */
     constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _supply
-    ) public ERC20Detailed(_name, _symbol, _decimals) {
-        _mint(msg.sender, _supply);
+    ) public {
+      transferAgents[msg.sender] = true;
     }
 
     /**
@@ -30,21 +24,7 @@ contract AdonxToken is ERC20, ERC20Detailed, Ownable {
      *
      */
     modifier canTransfer(address _sender) {
-        if (!released) {
-            require(transferAgents[_sender] == true);
-        }
-        _;
-    }
-
-    /** The function can be called only before or after the tokens have been releasesd */
-    modifier inReleaseState(bool releaseState) {
-        require(releaseState == released, "");
-        _;
-    }
-
-    /** The function can be called only by a whitelisted release agent. */
-    modifier onlyReleaseAgent() {
-        require(msg.sender == releaseAgent, "");
+        require(released || transferAgents[_sender]);
         _;
     }
 
@@ -80,6 +60,18 @@ contract AdonxToken is ERC20, ERC20Detailed, Ownable {
      */
     function releaseTokenTransfer() public onlyReleaseAgent {
         released = true;
+    }
+
+    /** The function can be called only before or after the tokens have been releasesd */
+    modifier inReleaseState(bool releaseState) {
+        require(releaseState == released, "");
+        _;
+    }
+
+    /** The function can be called only by a whitelisted release agent. */
+    modifier onlyReleaseAgent() {
+        require(msg.sender == releaseAgent, "");
+        _;
     }
 
     function transfer(address _to, uint256 _value)
