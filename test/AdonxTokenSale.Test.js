@@ -275,20 +275,36 @@ contract('AdonxTokenSale', function ([_, wallet, investor1, investor2, investor3
         await this.token.transfer(investor2, ether.toWei('250'), { from: investor1}).should.be.fulfilled;
       });
 
-      it('buyer able to transfer tokens after transefer lock release', async function () {
+      it('everyone should be able to transfer tokens after transefer lock release', async function () {
         await this.tokenSale.buyTokens(investor1, { value: ether.toWei('.5'), from: investor1 }).should.be.fulfilled;
+        await this.tokenSale.buyTokens(investor2, { value: ether.toWei('.5'), from: investor2 }).should.be.fulfilled;
+        await this.tokenSale.buyTokens(investor3, { value: ether.toWei('.5'), from: investor3 }).should.be.fulfilled;
 
         var token_bal_investor1 = await this.token.balanceOf(investor1);
         token_bal_investor1 = ether.fromWei(token_bal_investor1.toString());
         token_bal_investor1.should.be.bignumber.eql(web3.utils.toBN('2500'));
 
-        await this.token.transfer(investor2, ether.toWei('500'), { from: investor1 }).should.not.be.fulfilled;
-        await this.token.releaseTokenTransfer({ from: _ });
-
-        await this.token.transfer(investor2, ether.toWei('500'), { from: investor1 }).should.be.fulfilled;
         var token_bal_investor2 = await this.token.balanceOf(investor2);
         token_bal_investor2 = ether.fromWei(token_bal_investor2.toString());
-        token_bal_investor2.should.be.bignumber.eql(web3.utils.toBN('500'));
+        token_bal_investor2.should.be.bignumber.eql(web3.utils.toBN('2500'));
+
+        var token_bal_investor3 = await this.token.balanceOf(investor3);
+        token_bal_investor3 = ether.fromWei(token_bal_investor3.toString());
+        token_bal_investor3.should.be.bignumber.eql(web3.utils.toBN('2500'));
+
+        await this.token.transfer(investor1, ether.toWei('500'), { from: investor2 }).should.not.be.fulfilled;
+        await this.token.transfer(investor2, ether.toWei('500'), { from: investor3 }).should.not.be.fulfilled;
+        await this.token.transfer(investor3, ether.toWei('500'), { from: investor1 }).should.not.be.fulfilled;
+
+        await this.token.releaseTokenTransfer({ from: _ });
+
+        await this.token.transfer(investor4, ether.toWei('500'), { from: investor1 }).should.be.fulfilled;
+        await this.token.transfer(investor4, ether.toWei('500'), { from: investor2 }).should.be.fulfilled;
+        await this.token.transfer(investor4, ether.toWei('500'), { from: investor3 }).should.be.fulfilled;
+
+        var token_bal_investor4 = await this.token.balanceOf(investor4);
+        token_bal_investor4 = ether.fromWei(token_bal_investor4.toString());
+        token_bal_investor4.should.be.bignumber.eql(web3.utils.toBN('1500'));
       });
 
       it('only admin can release transfer lock', async function () {
@@ -299,22 +315,32 @@ contract('AdonxTokenSale', function ([_, wallet, investor1, investor2, investor3
         await this.token.releaseTokenTransfer({ from: investor2 }).should.not.be.fulfilled;
       });
 
+      it('only admin can set transfer agent', async function () {
+        await this.tokenSale.buyTokens(investor3, { value: ether.toWei('.5'), from: investor3 }).should.be.fulfilled;
+        await this.token.setTransferAgent(investor3, true, { from: _ }).should.be.fulfilled;
+
+        await this.token.transfer(investor4, ether.toWei('500'), { from: investor3 }).should.be.fulfilled;
+        var token_bal_investor4 = await this.token.balanceOf(investor4);
+        token_bal_investor4 = ether.fromWei(token_bal_investor4.toString());
+        token_bal_investor4.should.be.bignumber.eql(web3.utils.toBN('500'));
+      });
+
+      it('only admin can revoke transfer agent', async function () {
+        await this.token.setTransferAgent(investor3, false, { from: _ }).should.be.fulfilled;
+        await this.token.transfer(investor4, ether.toWei('500'), { from: investor3 }).should.not.be.fulfilled;
+      });
+
       it('normal users can\'t set transfer agent', async function () {
         await this.token.setTransferAgent(investor3, true, { from: investor2 }).should.not.be.fulfilled;
-      });
-
-      it('normal users can\'t set release agent', async function () {
-        await this.token.setReleaseAgent(investor3, { from: investor2 }).should.not.be.fulfilled;
-      });
-
-      it('only admin can set transfer agent', async function () {
-        await this.token.setTransferAgent(investor3, true, { from: _ }).should.be.fulfilled;
       });
 
       it('only admin can set release agent', async function () {
         await this.token.setReleaseAgent(investor3, { from: _ }).should.be.fulfilled;
       });
 
+      it('normal users can\'t set release agent', async function () {
+        await this.token.setReleaseAgent(investor3, { from: investor2 }).should.not.be.fulfilled;
+      });
     });
   });
 

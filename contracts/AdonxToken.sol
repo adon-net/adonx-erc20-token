@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/ownership/Ownable.sol";
 contract AdonxToken is ERC20, ERC20Detailed, Ownable {
     address public releaseAgent;
 
-    /** A crowdsale contract can release us to the wild if ICO success. If false we are are in transfer lock up period.*/
-    bool private released = false;
+    /** If false we are are in transfer lock up period.*/
+    bool public released = false;
 
     /** Map of agents that are allowed to transfer tokens regardless of the lock down period. These are crowdsale contracts and possible the team multisig itself. */
     mapping(address => bool) public transferAgents;
